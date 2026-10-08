@@ -2,87 +2,84 @@ import { useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
-// Custom icons to match our dark theme
-const createIcon = (color) => {
+// Clean SaaS Map Icons
+const createIcon = (color, size = 14) => {
   return L.divIcon({
     className: 'custom-icon',
-    html: `<div style="background-color: ${color}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px ${color}"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
+    html: `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3)"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2]
   });
 };
 
 const ICONS = {
-  start: createIcon('#10B981'), // Green
-  pickup: createIcon('#F59E0B'), // Amber
-  dropoff: createIcon('#EF4444'), // Red
-  fuel: createIcon('#F59E0B'), // Amber
-  rest: createIcon('#4F8CFF'), // Blue
-  overnight: createIcon('#8B5CF6'), // Purple
+  start: createIcon('var(--status-d)', 16),
+  pickup: createIcon('var(--status-on)', 16),
+  dropoff: createIcon('var(--accent-primary)', 16),
+  fuel: createIcon('var(--status-on)', 12),
+  rest: createIcon('var(--text-muted)', 12),
+  overnight: createIcon('var(--status-sb)', 12),
 };
 
-// Component to auto-fit the map to the route bounds
 function MapBounds({ routeGeometry }) {
   const map = useMap();
   useEffect(() => {
     if (routeGeometry && routeGeometry.length > 0) {
       const bounds = L.latLngBounds(routeGeometry);
-      map.fitBounds(bounds, { padding: [50, 50] });
+      map.fitBounds(bounds, { padding: [60, 60] });
     }
   }, [routeGeometry, map]);
   return null;
 }
 
-export default function RouteMap({ tripData }) {
-  // Default center (US)
+export default function RouteMap({ tripData, theme }) {
   const defaultCenter = [39.8283, -98.5795];
   const zoom = 4;
 
-  if (!tripData) {
-    return (
-      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-        <p>Enter trip details to view the route map.</p>
-      </div>
-    );
-  }
+  if (!tripData) return null;
 
   return (
-    <div style={{ height: '100%', width: '100%', minHeight: '400px', backgroundColor: '#1a1d24' }}>
+    <div style={{ height: '100%', width: '100%', minHeight: '550px', backgroundColor: 'var(--bg-primary)' }}>
       <MapContainer 
         center={defaultCenter} 
         zoom={zoom} 
         style={{ height: '100%', width: '100%', zIndex: 1 }}
         zoomControl={false}
       >
-        {/* Dark mode map tiles (Using standard OSM with CSS inversion trick for free dark mode) */}
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           className="map-tiles"
         />
         
-        {/* Draw Route Polyline */}
         {tripData.route_geometry && (
           <Polyline 
             positions={tripData.route_geometry} 
-            color="#4F8CFF" 
+            color="var(--accent-primary)" 
             weight={4} 
-            opacity={0.8}
+            opacity={0.9}
+            lineCap="round"
+            lineJoin="round"
           />
         )}
 
-        {/* Draw Stops */}
         {tripData.stops && tripData.stops.map((stop, index) => (
           <Marker 
             key={index} 
             position={[stop.latitude, stop.longitude]}
             icon={ICONS[stop.stop_type] || ICONS.rest}
           >
-            <Popup className="dark-popup">
-              <div style={{ padding: '4px' }}>
-                <h4 style={{ margin: '0 0 4px 0', textTransform: 'capitalize', color: 'black' }}>{stop.stop_type} Stop</h4>
-                <p style={{ margin: '0 0 2px 0', fontSize: '0.85rem', color: '#333' }}>{stop.location_name}</p>
-                <p style={{ margin: '0', fontSize: '0.8rem', color: '#666' }}>{stop.notes}</p>
+            <Popup className="saas-popup">
+              <div style={{ padding: '8px', minWidth: '150px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '4px', letterSpacing: '0.05em' }}>
+                  {stop.stop_type} Stop
+                </div>
+                <div style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {stop.location_name}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  {stop.notes}
+                </div>
               </div>
             </Popup>
           </Marker>
@@ -90,6 +87,22 @@ export default function RouteMap({ tripData }) {
 
         <MapBounds routeGeometry={tripData.route_geometry} />
       </MapContainer>
+      
+      <style>{`
+        .leaflet-popup-content-wrapper {
+          border-radius: var(--radius-md) !important;
+          box-shadow: var(--shadow-lg) !important;
+          background-color: var(--bg-secondary) !important;
+          border: 1px solid var(--border) !important;
+        }
+        .leaflet-popup-tip {
+          background-color: var(--bg-secondary) !important;
+          border: 1px solid var(--border) !important;
+        }
+        .leaflet-container {
+          font-family: var(--font-sans) !important;
+        }
+      `}</style>
     </div>
   );
 }

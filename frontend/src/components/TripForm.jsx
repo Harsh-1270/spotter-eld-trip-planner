@@ -7,7 +7,6 @@ function LocationInput({ label, id, name, value, onChange, icon: Icon, iconColor
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -18,7 +17,6 @@ function LocationInput({ label, id, name, value, onChange, icon: Icon, iconColor
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch suggestions
   useEffect(() => {
     if (!value || value.length < 3 || !isOpen) {
       setSuggestions([]);
@@ -43,13 +41,12 @@ function LocationInput({ label, id, name, value, onChange, icon: Icon, iconColor
 
     const debounce = setTimeout(() => {
       fetchSuggestions();
-    }, 300); // 300ms delay to prevent too many API calls
+    }, 300);
 
     return () => clearTimeout(debounce);
   }, [value, isOpen]);
 
   const handleSelect = (suggestion) => {
-    // Manually trigger onChange like a normal input event
     onChange({ target: { name, value: suggestion } });
     setIsOpen(false);
   };
@@ -58,7 +55,7 @@ function LocationInput({ label, id, name, value, onChange, icon: Icon, iconColor
     <div className="form-group" ref={wrapperRef}>
       <label className="form-label" htmlFor={id}>{label}</label>
       <div style={{ position: 'relative' }}>
-        <Icon size={18} color={iconColor} style={{ position: 'absolute', left: '12px', top: '10px' }} />
+        <Icon size={18} color={iconColor} style={{ position: 'absolute', left: '14px', top: '13px' }} />
         <input 
           type="text" 
           id={id}
@@ -71,29 +68,29 @@ function LocationInput({ label, id, name, value, onChange, icon: Icon, iconColor
             setIsOpen(true);
           }}
           onFocus={() => value && value.length >= 3 && setIsOpen(true)}
-          style={{ width: '100%', paddingLeft: '40px' }}
+          style={{ width: '100%', paddingLeft: '44px', height: '44px' }}
           required
           autoComplete="off"
         />
         
-        {/* Dropdown Menu */}
         {isOpen && (suggestions.length > 0 || loading) && (
           <div style={{
             position: 'absolute',
             top: '100%',
             left: 0,
             right: 0,
-            backgroundColor: 'var(--bg-tertiary)',
+            backgroundColor: 'var(--bg-secondary)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-md)',
-            marginTop: '4px',
-            zIndex: 10,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-            maxHeight: '200px',
-            overflowY: 'auto'
+            marginTop: '8px',
+            zIndex: 50,
+            boxShadow: 'var(--shadow-lg)',
+            maxHeight: '220px',
+            overflowY: 'auto',
+            padding: '4px'
           }}>
             {loading ? (
-              <div style={{ padding: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Loading...</div>
+              <div style={{ padding: '12px 16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Searching locations...</div>
             ) : (
               suggestions.map((s, idx) => (
                 <div 
@@ -101,13 +98,18 @@ function LocationInput({ label, id, name, value, onChange, icon: Icon, iconColor
                   onClick={() => handleSelect(s)}
                   style={{
                     padding: '10px 12px',
-                    fontSize: '0.85rem',
+                    fontSize: '0.9rem',
                     cursor: 'pointer',
-                    borderBottom: idx < suggestions.length - 1 ? '1px solid var(--border)' : 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--bg-secondary)'}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--bg-tertiary)'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                 >
+                  <MapPin size={14} color="var(--text-muted)" />
                   {s}
                 </div>
               ))
@@ -144,42 +146,42 @@ export default function TripForm({ onSubmit, isLoading }) {
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       
       <LocationInput 
-        label="Current Location"
+        label="Start Location"
         id="current_location"
         name="current_location"
         value={formData.current_location}
         onChange={handleChange}
         icon={Navigation}
-        iconColor="var(--accent-primary)"
-        placeholder="e.g. San Francisco, CA"
+        iconColor="var(--status-d)"
+        placeholder="Where is the truck now?"
       />
 
       <LocationInput 
-        label="Pickup Location"
+        label="Pickup Load"
         id="pickup_location"
         name="pickup_location"
         value={formData.pickup_location}
         onChange={handleChange}
         icon={MapPin}
-        iconColor="var(--accent-warning)"
-        placeholder="e.g. Los Angeles, CA"
+        iconColor="var(--status-on)"
+        placeholder="Where is the load picking up?"
       />
 
       <LocationInput 
-        label="Dropoff Location"
+        label="Dropoff Destination"
         id="dropoff_location"
         name="dropoff_location"
         value={formData.dropoff_location}
         onChange={handleChange}
         icon={MapPin}
-        iconColor="var(--accent-danger)"
-        placeholder="e.g. New York, NY"
+        iconColor="var(--accent-primary)"
+        placeholder="Final destination"
       />
 
       <div className="form-group" style={{ marginBottom: 'auto' }}>
-        <label className="form-label" htmlFor="current_cycle_used">Current Cycle Used (Hours)</label>
+        <label className="form-label" htmlFor="current_cycle_used">Cycle Hours Used (70hr/8day)</label>
         <div style={{ position: 'relative' }}>
-          <Clock size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+          <Clock size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '13px' }} />
           <input 
             type="number" 
             step="0.1"
@@ -191,20 +193,20 @@ export default function TripForm({ onSubmit, isLoading }) {
             placeholder="0.0"
             value={formData.current_cycle_used}
             onChange={handleChange}
-            style={{ width: '100%', paddingLeft: '40px' }}
+            style={{ width: '100%', paddingLeft: '44px', height: '44px' }}
             required
           />
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-          Hours already consumed in your 70-hour/8-day cycle.
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px', lineHeight: '1.4' }}>
+          Hours currently consumed in your active DOT cycle before starting this trip.
         </span>
       </div>
 
-      <button type="submit" className="btn-primary" disabled={isLoading} style={{ marginTop: '24px' }}>
+      <button type="submit" className="btn-primary" disabled={isLoading} style={{ marginTop: '32px', height: '48px' }}>
         {isLoading ? (
           <>
-            <Loader2 size={18} className="lucide-spin" style={{ animation: 'spin 2s linear infinite' }} />
-            Calculating Route...
+            <Loader2 size={18} className="lucide-spin" style={{ animation: 'spin 1s linear infinite' }} />
+            Routing & Calculating HOS...
           </>
         ) : (
           'Generate Trip Plan & Logs'
