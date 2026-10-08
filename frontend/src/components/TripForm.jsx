@@ -28,7 +28,8 @@ function LocationInput({ label, id, name, value, onChange, icon: Icon, iconColor
     const fetchSuggestions = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:8000/api/autocomplete/?text=${encodeURIComponent(value)}`);
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const res = await fetch(`${apiUrl}/api/autocomplete/?text=${encodeURIComponent(value)}`);
         if (res.ok) {
           const data = await res.json();
           setSuggestions(data);
