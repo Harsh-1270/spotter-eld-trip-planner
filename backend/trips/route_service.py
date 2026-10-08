@@ -114,7 +114,9 @@ class RouteService:
         if not text or len(text) < 2:
             return []
             
-        url = f"{self.BASE_URL}/geocode/autocomplete"
+        # The /geocode/autocomplete endpoint often returns 403 for free tier keys, 
+        # so we use /geocode/search as a fallback.
+        url = f"{self.BASE_URL}/geocode/search"
         params = {
             'api_key': self.api_key,
             'text': text,
@@ -133,6 +135,8 @@ class RouteService:
                     if label and label not in suggestions:
                         suggestions.append(label)
                 return suggestions
+            else:
+                print(f"Autocomplete API returned {response.status_code}: {response.text}")
             return []
         except Exception as e:
             print(f"Autocomplete error: {e}")
