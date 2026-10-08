@@ -6,4 +6,5 @@ from . import views
 
 urlpatterns = [
     path('plan-trip/', views.PlanTripView.as_view(), name='plan-trip'),
+    path('autocomplete/', views.AutocompleteView.as_view(), name='autocomplete'),
 ]

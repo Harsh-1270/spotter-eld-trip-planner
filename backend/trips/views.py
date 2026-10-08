@@ -56,3 +56,19 @@ class PlanTripView(APIView):
             traceback.print_exc()
             return Response({"error": f"An unexpected error occurred during trip calculation: {str(e)}"}, 
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AutocompleteView(APIView):
+    """
+    GET /api/autocomplete/?text=...
+    Returns a list of location suggestions from OpenRouteService.
+    """
+    def get(self, request, *args, **kwargs):
+        text = request.query_params.get('text', '')
+        if len(text) < 3:
+            return Response([])
+            
+        from .route_service import RouteService
+        rs = RouteService()
+        suggestions = rs.autocomplete(text)
+        
+        return Response(suggestions, status=status.HTTP_200_OK)

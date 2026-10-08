@@ -174,102 +174,126 @@ class HOSCalculator:
         
         # We process segment by segment
         segments = route['segments']
-        total_steps = []
-        for seg in segments:
+        has_separate_pickup = len(segments) > 1
+        
+        # If current == pickup, we do the pickup immediately before driving
+        if not has_separate_pickup:
+            add_time("on_duty", PICKUP_DURATION_HOURS, pickup_loc, "Pickup Load")
+            trip.stops.append(Stop(
+                stop_type="pickup",
+                location_name=pickup_loc,
+                latitude=coords_pickup[1],
+                longitude=coords_pickup[0],
+                arrival_time=(trip_start_date + timedelta(hours=trip_time_hours - PICKUP_DURATION_HOURS)).isoformat(),
+                departure_time=(trip_start_date + timedelta(hours=trip_time_hours)).isoformat(),
+                duration_hours=PICKUP_DURATION_HOURS,
+                miles_from_start=current_miles,
+                sequence_order=len(trip.stops)+1,
+                notes="Pickup Load"
+            ))
+
+        for seg_idx, seg in enumerate(segments):
             for step in seg['steps']:
-                total_steps.append(step)
+                step_miles = step['distance']
+                # ORS provides duration in seconds, but we might want a fallback to AVG_SPEED_MPH if it's weird
+                step_duration_hours = step['duration'] / 3600.0 if step['duration'] > 0 else (step_miles / AVG_SPEED_MPH)
                 
-        # Simulate step by step
-        for step in total_steps:
-            step_miles = step['distance']
-            # ORS provides duration in seconds, but we might want a fallback to AVG_SPEED_MPH if it's weird
-            step_duration_hours = step['duration'] / 3600.0 if step['duration'] > 0 else (step_miles / AVG_SPEED_MPH)
-            
-            if step_miles <= 0:
-                continue
-                
-            miles_remaining_in_step = step_miles
-            time_remaining_in_step = step_duration_hours
-            
-            while miles_remaining_in_step > 0.01:
-                # Check cycle
-                if cycle_remaining <= 0:
-                    take_restart("En Route")
+                if step_miles <= 0:
                     continue
                     
-                # Check 14 hour window
-                if shift_on_duty >= MAX_DUTY_WINDOW:
-                    take_rest(MIN_OFF_DUTY_HOURS, "En Route", "sleeper", "10-Hour Shift Reset")
-                    continue
-                    
-                # Check 11 hour driving
-                if shift_driving >= MAX_DRIVING_HOURS:
-                    take_rest(MIN_OFF_DUTY_HOURS, "En Route", "sleeper", "11-Hour Drive Limit Hit")
-                    continue
-                    
-                # Check 8 hour break
-                if driving_since_break >= BREAK_AFTER_DRIVING:
-                    take_break("En Route")
-                    continue
-                    
-                # Calculate how much we can drive in this chunk
-                speed_mph = miles_remaining_in_step / time_remaining_in_step if time_remaining_in_step > 0 else AVG_SPEED_MPH
+                miles_remaining_in_step = step_miles
+                time_remaining_in_step = step_duration_hours
                 
-                driveable_time = min(
-                    time_remaining_in_step,
-                    MAX_DRIVING_HOURS - shift_driving,
-                    MAX_DUTY_WINDOW - shift_on_duty,
-                    BREAK_AFTER_DRIVING - driving_since_break,
-                    cycle_remaining
-                )
-                
-                # Check fuel distance limit
-                miles_to_next_fuel = FUEL_INTERVAL_MILES - miles_since_fuel
-                time_to_next_fuel = miles_to_next_fuel / speed_mph
-                
-                if time_to_next_fuel < driveable_time:
-                    # Drive to fuel stop
-                    driveable_time = time_to_next_fuel
-                    driveable_miles = driveable_time * speed_mph
+                while miles_remaining_in_step > 0.01:
+                    # Check cycle
+                    if cycle_remaining <= 0:
+                        take_restart("En Route")
+                        continue
+                        
+                    # Check 14 hour window
+                    if shift_on_duty >= MAX_DUTY_WINDOW:
+                        take_rest(MIN_OFF_DUTY_HOURS, "En Route", "sleeper", "10-Hour Shift Reset")
+                        continue
+                        
+                    # Check 11 hour driving
+                    if shift_driving >= MAX_DRIVING_HOURS:
+                        take_rest(MIN_OFF_DUTY_HOURS, "En Route", "sleeper", "11-Hour Drive Limit Hit")
+                        continue
+                        
+                    # Check 8 hour break
+                    if driving_since_break >= BREAK_AFTER_DRIVING:
+                        take_break("En Route")
+                        continue
+                        
+                    # Calculate how much we can drive in this chunk
+                    speed_mph = miles_remaining_in_step / time_remaining_in_step if time_remaining_in_step > 0 else AVG_SPEED_MPH
                     
-                    add_time("driving", driveable_time, "En Route")
-                    miles_remaining_in_step -= driveable_miles
-                    time_remaining_in_step -= driveable_time
-                    current_miles += driveable_miles
-                    miles_since_fuel += driveable_miles
+                    driveable_time = min(
+                        time_remaining_in_step,
+                        MAX_DRIVING_HOURS - shift_driving,
+                        MAX_DUTY_WINDOW - shift_on_duty,
+                        BREAK_AFTER_DRIVING - driving_since_break,
+                        cycle_remaining
+                    )
                     
-                    # Do Fuel Stop
-                    add_time("on_duty", FUEL_DURATION_HOURS, "Fuel Stop", "Fueling")
-                    miles_since_fuel = 0.0
+                    # Check fuel distance limit
+                    miles_to_next_fuel = FUEL_INTERVAL_MILES - miles_since_fuel
+                    time_to_next_fuel = miles_to_next_fuel / speed_mph
                     
-                    # Need to record stop
-                    # Approx location
-                    coord = geometry_coords_lat_lon[-1] if geometry_coords_lat_lon else [0,0] # rough fallback
-                    trip.stops.append(Stop(
-                        stop_type="fuel",
-                        location_name="Fuel Station",
-                        latitude=coord[0],
-                        longitude=coord[1],
-                        arrival_time=(trip_start_date + timedelta(hours=trip_time_hours - FUEL_DURATION_HOURS)).isoformat(),
-                        departure_time=(trip_start_date + timedelta(hours=trip_time_hours)).isoformat(),
-                        duration_hours=FUEL_DURATION_HOURS,
-                        miles_from_start=current_miles,
-                        sequence_order=len(trip.stops)+1,
-                        notes="Fuel Stop"
-                    ))
-                else:
-                    # Drive the chunk
-                    driveable_miles = driveable_time * speed_mph
-                    add_time("driving", driveable_time, "En Route")
-                    miles_remaining_in_step -= driveable_miles
-                    time_remaining_in_step -= driveable_time
-                    current_miles += driveable_miles
-                    miles_since_fuel += driveable_miles
-                    
-            # Check if this step is near pickup
-            # Simple assumption: segment 1 is current -> pickup. segment 2 is pickup -> dropoff.
-            # We don't have perfect alignment without mapping steps to segments directly, but we can do a rough check based on distance.
-            pass
+                    if time_to_next_fuel < driveable_time:
+                        # Drive to fuel stop
+                        driveable_time = time_to_next_fuel
+                        driveable_miles = driveable_time * speed_mph
+                        
+                        add_time("driving", driveable_time, "En Route")
+                        miles_remaining_in_step -= driveable_miles
+                        time_remaining_in_step -= driveable_time
+                        current_miles += driveable_miles
+                        miles_since_fuel += driveable_miles
+                        
+                        # Do Fuel Stop
+                        add_time("on_duty", FUEL_DURATION_HOURS, "Fuel Stop", "Fueling")
+                        miles_since_fuel = 0.0
+                        
+                        # Need to record stop
+                        # Approx location
+                        coord = geometry_coords_lat_lon[-1] if geometry_coords_lat_lon else [0,0] # rough fallback
+                        trip.stops.append(Stop(
+                            stop_type="fuel",
+                            location_name="Fuel Station",
+                            latitude=coord[0],
+                            longitude=coord[1],
+                            arrival_time=(trip_start_date + timedelta(hours=trip_time_hours - FUEL_DURATION_HOURS)).isoformat(),
+                            departure_time=(trip_start_date + timedelta(hours=trip_time_hours)).isoformat(),
+                            duration_hours=FUEL_DURATION_HOURS,
+                            miles_from_start=current_miles,
+                            sequence_order=len(trip.stops)+1,
+                            notes="Fuel Stop"
+                        ))
+                    else:
+                        # Drive the chunk
+                        driveable_miles = driveable_time * speed_mph
+                        add_time("driving", driveable_time, "En Route")
+                        miles_remaining_in_step -= driveable_miles
+                        time_remaining_in_step -= driveable_time
+                        current_miles += driveable_miles
+                        miles_since_fuel += driveable_miles
+                        
+            # If we just finished the first segment (and we had a separate pickup), it means we arrived at the pickup!
+            if has_separate_pickup and seg_idx == 0:
+                add_time("on_duty", PICKUP_DURATION_HOURS, pickup_loc, "Pickup Load")
+                trip.stops.append(Stop(
+                    stop_type="pickup",
+                    location_name=pickup_loc,
+                    latitude=coords_pickup[1],
+                    longitude=coords_pickup[0],
+                    arrival_time=(trip_start_date + timedelta(hours=trip_time_hours - PICKUP_DURATION_HOURS)).isoformat(),
+                    departure_time=(trip_start_date + timedelta(hours=trip_time_hours)).isoformat(),
+                    duration_hours=PICKUP_DURATION_HOURS,
+                    miles_from_start=current_miles,
+                    sequence_order=len(trip.stops)+1,
+                    notes="Pickup Load"
+                ))
             
         # Add final Dropoff on duty
         add_time("on_duty", DROPOFF_DURATION_HOURS, dropoff_loc, "Dropoff Load")

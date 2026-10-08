@@ -55,7 +55,7 @@ class RouteService:
         
         payload = {
             "coordinates": coordinates,
-            "instructions": False, # We don't need turn-by-turn text instructions
+            "instructions": True, # We need this to get 'segments' and 'steps' data
             "geometry": True,
             "units": "mi" # Miles
         }
@@ -99,3 +99,32 @@ class RouteService:
         except Exception as e:
             print(f"Reverse geocoding error: {e}")
             return "Unknown Location"
+
+    def autocomplete(self, text: str):
+        """Get location suggestions as the user types."""
+        if not text or len(text) < 2:
+            return []
+            
+        url = f"{self.BASE_URL}/geocode/autocomplete"
+        params = {
+            'api_key': self.api_key,
+            'text': text,
+            'size': 5
+        }
+        
+        try:
+            response = requests.get(url, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                suggestions = []
+                for feature in data.get('features', []):
+                    props = feature['properties']
+                    # Use label which usually has "City, Region, Country"
+                    label = props.get('label') or props.get('name')
+                    if label and label not in suggestions:
+                        suggestions.append(label)
+                return suggestions
+            return []
+        except Exception as e:
+            print(f"Autocomplete error: {e}")
+            return []

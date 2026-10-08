@@ -1,0 +1,181 @@
+:root {
+  /* Premium Dark Mode Palette */
+  --bg-primary: #0B0E14;      /* Deepest background */
+  --bg-secondary: #141822;    /* Card backgrounds */
+  --bg-tertiary: #1E2330;     /* Elevated surfaces / inputs */
+  
+  --accent-primary: #4F8CFF;  /* Spotter / Tech Blue */
+  --accent-primary-hover: #3A6DCC;
+  
+  --accent-success: #10B981;  /* Emerald Green */
+  --accent-warning: #F59E0B;  /* Amber / Yellow */
+  --accent-danger: #EF4444;   /* Red */
+  
+  --text-primary: #F8FAFC;    /* Bright white text */
+  --text-secondary: #94A3B8;  /* Muted grey text */
+  
+  --border: rgba(255, 255, 255, 0.08); /* Subtle borders */
+  
+  /* Shared values */
+  --radius-lg: 16px;
+  --radius-md: 8px;
+  --radius-sm: 4px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism Card Utility */
+.glass-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Optional: backdrop-filter: blur(10px); if slightly transparent */
+}
+
+/* Inputs and Forms */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(79, 140, 255, 0.2);
+}
+
+.form-input::placeholder {
+  color: #475569;
+}
+
+/* Primary Button */
+.btn-primary {
+  background-color: var(--accent-primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+/* Layout Utilities */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--bg-secondary);
+}
+
+.app-header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.main-content {
+  padding: 32px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.top-row {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+  height: 500px;
+}
+
+@media (max-width: 1024px) {
+  .top-row {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary); 
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary); 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155; 
+}
+
+/* Map Tile Dark Mode Inversion */
+.leaflet-layer.map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
