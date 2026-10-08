@@ -76,9 +76,10 @@ export default function TripSummary({ tripData }) {
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background-color: var(--bg-tertiary);
+          background-color: var(--bg-secondary);
           border: 2px solid var(--accent-primary);
           z-index: 1;
+          box-shadow: 0 0 0 4px var(--bg-secondary);
         }
       `}</style>
 

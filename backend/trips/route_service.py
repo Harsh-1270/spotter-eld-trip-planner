@@ -62,6 +62,15 @@ class RouteService:
         
         try:
             response = requests.post(url, json=payload, headers=self.get_headers())
+            
+            # If the HGV profile cannot find a road (e.g. mountainous/remote regions like Srinagar)
+            # fallback to standard driving car profile.
+            if response.status_code in [404, 400]:
+                url_fallback = f"{self.BASE_URL}/directions/driving-car"
+                fallback_resp = requests.post(url_fallback, json=payload, headers=self.get_headers())
+                if fallback_resp.status_code == 200:
+                    return fallback_resp.json()
+            
             response.raise_for_status()
             return response.json()
         except Exception as e:

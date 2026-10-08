@@ -12,10 +12,10 @@ const STATUS_COLORS = {
   'off_duty': '#94A3B8', // Grey
   'sleeper': '#A78BFA',  // Purple
   'driving': '#34D399',  // Emerald Green
-  'on_duty': '#F87171'   // Coral Red
+  'on_duty': '#EF4444'   // Coral Red
 };
 
-export default function LogSheet({ logs }) {
+export default function LogSheet({ logs, theme }) {
   const [activeDay, setActiveDay] = useState(1);
   const canvasRef = useRef(null);
   
@@ -47,14 +47,20 @@ export default function LogSheet({ logs }) {
     const gridHeight = rowHeight * 4;
     const gridTop = headerHeight + padding;
     
+    // Use exact hex colors based on the theme prop to avoid DOM CSS variable race conditions
+    const isDark = theme === 'dark';
+    const bgColor = isDark ? '#12141D' : '#FFFFFF';
+    const textColor = isDark ? '#9CA3AF' : '#6B7280';
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+
     // Clear canvas
-    ctx.fillStyle = '#1A1D27'; // var(--bg-secondary)
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
     
     // --- DRAW BACKGROUND & GRID ---
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
-    ctx.fillStyle = '#94A3B8'; // var(--text-secondary)
+    ctx.fillStyle = textColor;
     ctx.font = '12px Inter';
     ctx.textBaseline = 'middle';
     
@@ -163,7 +169,7 @@ export default function LogSheet({ logs }) {
       });
     }
 
-  }, [activeLog]);
+  }, [activeLog, theme]); // Added theme dependency to redraw canvas on toggle
 
   if (!logs || logs.length === 0) return null;
 
@@ -250,7 +256,7 @@ export default function LogSheet({ logs }) {
                   return (
                     <div key={i} style={{ fontSize: '0.85rem', display: 'flex', gap: '16px' }}>
                       <span style={{ color: 'var(--accent-primary)', minWidth: '45px' }}>{timeStr}</span>
-                      <span style={{ color: 'white', fontWeight: '500' }}>{r.location}</span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{r.location}</span>
                       <span style={{ color: 'var(--text-secondary)' }}>- {r.note}</span>
                     </div>
                   );

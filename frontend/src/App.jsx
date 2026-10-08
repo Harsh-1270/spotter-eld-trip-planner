@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Truck } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Activity, Sun, Moon } from 'lucide-react'
 import './index.css'
 
 import TripForm from './components/TripForm'
@@ -11,12 +11,21 @@ function App() {
   const [tripData, setTripData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [theme, setTheme] = useState('dark');
+
+  // Apply theme to document element
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   const handlePlanTrip = async (formData) => {
     setIsLoading(true);
     setError(null);
     try {
-      // API call to our Django backend
       const response = await fetch('http://localhost:8000/api/plan-trip/', {
         method: 'POST',
         headers: {
@@ -42,8 +51,18 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <Truck color="#4F8CFF" size={28} />
-        <h1>Spotter ELD Trip Planner</h1>
+        <div className="brand">
+          <div className="brand-icon-wrapper">
+            <Activity color="var(--accent-primary)" size={24} strokeWidth={2.5} />
+          </div>
+          <h1 style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: '800', letterSpacing: '-0.02em', fontSize: '1.3rem' }}>
+            SPOTTER <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>ELD</span>
+          </h1>
+        </div>
+        
+        <button onClick={toggleTheme} className="theme-toggle" aria-label="Toggle Theme">
+          {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+        </button>
       </header>
 
       <main className="main-content">
@@ -55,26 +74,26 @@ function App() {
         )}
 
         <div className="top-row">
-          <div className="glass-card" style={{ padding: '24px' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '1.1rem' }}>Trip Planning Details</h2>
+          <div className="glass-card" style={{ padding: '32px', display: 'flex', flexDirection: 'column' }}>
+            <h2 style={{ marginBottom: '24px', fontSize: '1.2rem', fontWeight: '600' }}>Plan Your Route</h2>
             <TripForm onSubmit={handlePlanTrip} isLoading={isLoading} />
           </div>
 
-          <div className="glass-card" style={{ overflow: 'hidden' }}>
-            <RouteMap tripData={tripData} />
+          <div className="glass-card" style={{ overflow: 'hidden', minHeight: '550px' }}>
+            <RouteMap tripData={tripData} theme={theme} />
           </div>
         </div>
 
         {tripData && (
           <>
-            <div className="glass-card" style={{ padding: '24px' }}>
-              <h2 style={{ marginBottom: '20px', fontSize: '1.1rem' }}>Trip Summary & Itinerary</h2>
+            <div className="glass-card" style={{ padding: '32px' }}>
+              <h2 style={{ marginBottom: '24px', fontSize: '1.2rem', fontWeight: '600' }}>Trip Summary & Itinerary</h2>
               <TripSummary tripData={tripData} />
             </div>
 
-            <div className="glass-card" style={{ padding: '24px' }}>
-              <h2 style={{ marginBottom: '20px', fontSize: '1.1rem' }}>ELD Daily Logs</h2>
-              <LogSheet logs={tripData.daily_logs} />
+            <div className="glass-card" style={{ padding: '32px' }}>
+              <h2 style={{ marginBottom: '24px', fontSize: '1.2rem', fontWeight: '600' }}>ELD Daily Logs</h2>
+              <LogSheet logs={tripData.daily_logs} theme={theme} />
             </div>
           </>
         )}
