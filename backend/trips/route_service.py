@@ -116,7 +116,7 @@ class RouteService:
             
         # The /geocode/autocomplete endpoint often returns 403 for free tier keys, 
         # so we use /geocode/search as a fallback.
-        url = f"{self.BASE_URL}/geocode/search"
+        url = f"{self.BASE_URL}/geocode/autocomplete"
         params = {
             'api_key': self.api_key,
             'text': text,
